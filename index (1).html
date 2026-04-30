@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIRVIS Club — Earnings Calculator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --dark:       #0D1B2A;
+    --navy:       #112236;
+    --navy2:      #1A2E44;
+    --teal:       #1D9E75;
+    --teal-mid:   #5DCAA5;
+    --teal-light: #E1F5EE;
+    --teal-dark:  #085041;
+    --amber:      #EF9F27;
+    --amber-light:#FAEEDA;
+    --amber-dark: #633806;
+    --text:       #E8F0F7;
+    --muted:      #8EA8C3;
+    --border:     rgba(255,255,255,0.08);
+  }
+
+  html, body {
+    min-height: 100%;
+    background: var(--dark);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 720px;
+    background: var(--navy);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px 36px 36px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+  }
+
+  /* Header */
+  .pill {
+    display: inline-block;
+    background: rgba(29,158,117,0.12);
+    border: 1px solid rgba(29,158,117,0.3);
+    color: var(--teal-mid);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 500;
+    padding: 5px 14px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+  }
+
+  .card h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(20px, 4vw, 28px);
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.15;
+    margin-bottom: 8px;
+  }
+
+  .card h1 em {
+    font-style: normal;
+    color: var(--teal-mid);
+  }
+
+  .card p.sub {
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 300;
+    line-height: 1.65;
+    margin-bottom: 32px;
+  }
+
+  /* Sliders */
+  .slider-group { margin-bottom: 14px; }
+
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .slider-row label {
+    font-size: 12px;
+    color: var(--muted);
+    min-width: 130px;
+    font-weight: 400;
+  }
+
+  input[type=range] {
+    flex: 1;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--navy2);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--teal);
+    border: 2px solid var(--navy);
+    box-shadow: 0 0 0 3px rgba(29,158,117,0.25);
+    cursor: pointer;
+    transition: box-shadow 0.2s;
+  }
+
+  input[type=range]::-webkit-slider-thumb:hover {
+    box-shadow: 0 0 0 5px rgba(29,158,117,0.3);
+  }
+
+  input[type=range]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--teal);
+    border: 2px solid var(--navy);
+    cursor: pointer;
+  }
+
+  .slider-val {
+    font-size: 13px;
+    font-weight: 500;
+    color: #fff;
+    min-width: 70px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Results */
+  .results {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 24px 0;
+  }
+
+  .result-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 14px;
+    transition: border-color 0.2s;
+  }
+
+  .result-card.highlight {
+    background: rgba(29,158,117,0.1);
+    border-color: rgba(29,158,117,0.35);
+  }
+
+  .result-card .rc-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.3px;
+    margin-bottom: 6px;
+  }
+
+  .result-card .rc-val {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(18px, 3vw, 22px);
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+  }
+
+  .result-card.highlight .rc-val { color: var(--teal-mid); }
+
+  .result-card .rc-sub {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* Tier track */
+  .tier-section { margin: 4px 0 20px; }
+
+  .tier-meta {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .tier-meta strong { color: var(--teal-mid); }
+
+  .tier-bar {
+    display: flex;
+    gap: 3px;
+    height: 7px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+
+  .tier-seg {
+    flex: 1;
+    height: 100%;
+    border-radius: 0;
+    transition: opacity 0.3s;
+  }
+
+  .tier-seg.on  { opacity: 1; }
+  .tier-seg.off { opacity: 0.15; }
+
+  .tier-names {
+    display: flex;
+    gap: 3px;
+  }
+
+  .tier-name {
+    flex: 1;
+    font-size: 9px;
+    color: var(--muted);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.2s;
+  }
+
+  .tier-name.on { color: var(--teal-mid); font-weight: 500; }
+
+  /* Chart */
+  .chart-label {
+    font-size: 10px;
+    color: var(--muted);
+    margin-bottom: 10px;
+    letter-spacing: 0.3px;
+  }
+
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+    height: 150px;
+    margin-bottom: 20px;
+  }
+
+  /* Divider */
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 20px 0;
+  }
+
+  /* Commission note */
+  .comm-note {
+    font-size: 12px;
+    color: var(--muted);
+    background: rgba(239,159,39,0.07);
+    border: 1px solid rgba(239,159,39,0.2);
+    border-radius: 8px;
+    padding: 12px 14px;
+    line-height: 1.6;
+  }
+
+  .comm-note strong { color: #FAC775; font-weight: 500; }
+
+  /* Footer */
+  .footer {
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .footer-brand {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--teal-mid);
+    letter-spacing: 1px;
+  }
+
+  .footer-note {
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  /* Responsive */
+  @media (max-width: 520px) {
+    .card { padding: 28px 20px 24px; }
+    .results { grid-template-columns: 1fr 1fr; }
+    .results .result-card:last-child { grid-column: span 2; }
+    .slider-row label { min-width: 100px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <span class="pill">SIRVIS Club</span>
+  <h1>How much could your outlet earn —<br><em>and what does that mean for you?</em></h1>
+  <p class="sub">Adjust the sliders to see your outlet's monthly voucher, annual reward potential, and your commission impact in real time.</p>
+
+  <div class="slider-group">
+    <div class="slider-row">
+      <label>Monthly outlet spend</label>
+      <input type="range" id="spend" min="500" max="25000" step="100" value="5000">
+      <span class="slider-val" id="spend-out">€5,000</span>
+    </div>
+  </div>
+
+  <div class="slider-group">
+    <div class="slider-row">
+      <label>Outlets you manage</label>
+      <input type="range" id="outlets" min="1" max="50" step="1" value="10">
+      <span class="slider-val" id="outlets-out">10</span>
+    </div>
+  </div>
+
+  <div class="results">
+    <div class="result-card">
+      <div class="rc-label">Outlet monthly voucher</div>
+      <div class="rc-val" id="res-voucher">€100</div>
+      <div class="rc-sub">redeemable next month</div>
+    </div>
+    <div class="result-card">
+      <div class="rc-label">Outlet annual reward</div>
+      <div class="rc-val" id="res-annual">€1,200</div>
+      <div class="rc-sub">potential per outlet</div>
+    </div>
+    <div class="result-card highlight">
+      <div class="rc-label">Your annual commission</div>
+      <div class="rc-val" id="res-comm">€24,000</div>
+      <div class="rc-sub" id="res-comm-sub">across 10 outlets</div>
+    </div>
+  </div>
+
+  <div class="tier-section">
+    <div class="tier-meta" id="tier-meta">Current tier: <strong>—</strong></div>
+    <div class="tier-bar" id="tier-bar"></div>
+    <div class="tier-names" id="tier-names"></div>
+  </div>
+
+  <div class="chart-label">Annual reward potential across all tiers</div>
+  <div class="chart-wrap">
+    <canvas id="myChart"></canvas>
+  </div>
+
+  <hr>
+
+  <div class="comm-note">
+    Your 4% commission applies on every qualifying order.
+    <strong>At this spend level, each outlet adds €<span id="per-month">200</span>/month to your income.</strong>
+    Scale that across all your outlets and SIRVIS pays for itself many times over.
+  </div>
+
+  <div class="footer">
+    <span class="footer-brand">SIRVIS</span>
+    <span class="footer-note">Minimum 2 orders/month required to qualify. Voucher valid on next month's cart with minimum cart value.</span>
+  </div>
+
+</div>
+
+<script>
+const tiers = [
+  { label: '€1.5k–2.5k', min: 1500,  max: 2499,    voucher: 30,   annual: 360,   color: '#5DCAA5' },
+  { label: '€2.5k–3.5k', min: 2500,  max: 3499,    voucher: 50,   annual: 600,   color: '#1D9E75' },
+  { label: '€3.5k–6.5k', min: 3500,  max: 6499,    voucher: 100,  annual: 1200,  color: '#0F6E56' },
+  { label: '€6.5k–10k',  min: 6500,  max: 9999,    voucher: 200,  annual: 2400,  color: '#EF9F27' },
+  { label: '€10k–15k',   min: 10000, max: 14999,   voucher: 400,  annual: 4800,  color: '#FAC775' },
+  { label: '€15k–20k',   min: 15000, max: 19999,   voucher: 650,  annual: 7800,  color: '#F0997B' },
+  { label: '€20k+',      min: 20000, max: Infinity, voucher: 1000, annual: 12000, color: '#D85A30' },
+];
+
+function fmt(n) {
+  return '€' + n.toLocaleString('en-IE');
+}
+
+function getTier(spend) {
+  return tiers.find(t => spend >= t.min && spend <= t.max) || null;
+}
+
+// Build tier bar and names
+const barEl   = document.getElementById('tier-bar');
+const namesEl = document.getElementById('tier-names');
+
+tiers.forEach((t, i) => {
+  const seg = document.createElement('div');
+  seg.className = 'tier-seg off';
+  seg.style.background = t.color;
+  seg.id = 'seg-' + i;
+  barEl.appendChild(seg);
+
+  const nm = document.createElement('div');
+  nm.className = 'tier-name';
+  nm.textContent = t.label;
+  nm.id = 'tnm-' + i;
+  namesEl.appendChild(nm);
+});
+
+// Chart
+const ctx = document.getElementById('myChart').getContext('2d');
+const chart = new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: tiers.map(t => t.label),
+    datasets: [{
+      data: tiers.map(t => t.annual),
+      backgroundColor: tiers.map(t => t.color + '33'),
+      borderColor:     tiers.map(t => t.color),
+      borderWidth: 1.5,
+      borderRadius: 4,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => ' €' + ctx.parsed.y.toLocaleString('en-IE') + ' / year'
+        }
+      }
+    },
+    scales: {
+      x: {
+        ticks: { color: '#8EA8C3', font: { size: 10 }, autoSkip: false, maxRotation: 30 },
+        grid:  { display: false }
+      },
+      y: {
+        ticks: { color: '#8EA8C3', font: { size: 10 }, callback: v => '€' + (v/1000).toFixed(0) + 'k' },
+        grid:  { color: 'rgba(255,255,255,0.05)' }
+      }
+    }
+  }
+});
+
+function update() {
+  const spend   = parseInt(document.getElementById('spend').value);
+  const outlets = parseInt(document.getElementById('outlets').value);
+
+  document.getElementById('spend-out').textContent   = fmt(spend);
+  document.getElementById('outlets-out').textContent = outlets;
+
+  const tier     = getTier(spend);
+  const voucher  = tier ? tier.voucher : 0;
+  const annual   = tier ? tier.annual  : 0;
+  const comm     = Math.round(spend * 0.04 * outlets * 12);
+  const perMonth = Math.round(spend * 0.04);
+  const tierIdx  = tier ? tiers.indexOf(tier) : -1;
+
+  document.getElementById('res-voucher').textContent  = tier ? fmt(voucher) : '—';
+  document.getElementById('res-annual').textContent   = tier ? fmt(annual)  : '—';
+  document.getElementById('res-comm').textContent     = fmt(comm);
+  document.getElementById('res-comm-sub').textContent = 'across ' + outlets + ' outlet' + (outlets !== 1 ? 's' : '');
+  document.getElementById('per-month').textContent    = perMonth.toLocaleString('en-IE');
+
+  document.getElementById('tier-meta').innerHTML =
+    'Current tier: <strong>' + (tier ? tier.label : 'Below minimum') + '</strong>';
+
+  tiers.forEach((t, i) => {
+    document.getElementById('seg-' + i).className = 'tier-seg ' + (i <= tierIdx ? 'on' : 'off');
+    const nm = document.getElementById('tnm-' + i);
+    nm.className = 'tier-name' + (i === tierIdx ? ' on' : '');
+  });
+
+  chart.data.datasets[0].backgroundColor = tiers.map((t, i) =>
+    i === tierIdx ? t.color + '99' : t.color + '22');
+  chart.data.datasets[0].borderColor = tiers.map((t, i) =>
+    i === tierIdx ? t.color : t.color + '55');
+  chart.update('none');
+}
+
+document.getElementById('spend').addEventListener('input', update);
+document.getElementById('outlets').addEventListener('input', update);
+update();
+</script>
+
+</body>
+</html>
